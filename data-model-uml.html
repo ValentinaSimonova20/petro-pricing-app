@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Модель данных — UML / ER</title>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "base",
+      themeVariables: {
+        primaryColor: "#e8f4f5",
+        primaryTextColor: "#003D4C",
+        primaryBorderColor: "#008C95",
+        lineColor: "#5a6b76",
+        secondaryColor: "#f4f8fa",
+        tertiaryColor: "#fff",
+        background: "#f4f8fa",
+        mainBkg: "#ffffff",
+        nodeBorder: "#008C95",
+        clusterBkg: "#f0f7f8",
+        titleColor: "#003D4C",
+        edgeLabelBackground: "#ffffff",
+        fontFamily: "IBM Plex Sans, system-ui, sans-serif",
+        fontSize: "14px"
+      },
+      er: { diagramPadding: 24, layoutDirection: "TB", entityPadding: 12, useMaxWidth: true }
+    });
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4f8fa;
+      --panel: #ffffff;
+      --text: #003D4C;
+      --muted: #5a6b76;
+      --accent: #008C95;
+      --border: #d7e3e8;
+      --pk: #0a7a4b;
+      --fk: #b45309;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      background: var(--panel);
+      border-bottom: 2px solid var(--accent);
+      padding: 1.25rem 1.75rem 1.1rem;
+    }
+    header h1 {
+      margin: 0 0 0.25rem;
+      font-size: 1.45rem;
+      font-weight: 700;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 52rem;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.9rem;
+    }
+    .toolbar a, .toolbar button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font: 500 0.85rem "IBM Plex Sans", system-ui, sans-serif;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .toolbar a:hover, .toolbar button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .toolbar a.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    main { padding: 1.25rem 1.5rem 3rem; max-width: 1400px; margin: 0 auto; }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.1rem 1.25rem 1.4rem;
+      margin-bottom: 1.25rem;
+    }
+    section h2 {
+      margin: 0 0 0.35rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    section .lead {
+      margin: 0 0 1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .diagram-wrap {
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fafcfd;
+      padding: 1rem;
+    }
+    .mermaid { display: flex; justify-content: center; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 1.5rem;
+      margin-top: 0.9rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+    .dot {
+      width: 10px; height: 10px; border-radius: 2px; display: inline-block;
+    }
+    .dot.pk { background: var(--pk); }
+    .dot.fk { background: var(--fk); }
+    .dot.rel { background: var(--accent); }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+    }
+    .flow-step {
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 0.7rem 0.8rem;
+      background: #fafcfd;
+    }
+    .flow-step strong {
+      display: block;
+      font-size: 0.8rem;
+      margin-bottom: 0.2rem;
+    }
+    .flow-step span {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+    }
+    table.rel {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-top: 0.5rem;
+    }
+    table.rel th, table.rel td {
+      border: 1px solid var(--border);
+      padding: 0.55rem 0.7rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    table.rel th { background: #eef4f7; }
+    table.rel code {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.82rem;
+      background: #f0f4f6;
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+    }
+    .hint {
+      margin-top: 0.75rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .pane { display: none; }
+    .pane.visible { display: block; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Модель данных · UML / ER</h1>
+    <p>
+      Восемь сущностей этапа&nbsp;1 по фактическим колонкам Excel.
+      Откройте файл в браузере — диаграмма рисуется сразу. Источник схемы:
+      <code>data-model.md</code>.
+    </p>
+    <div class="toolbar" role="tablist">
+      <button type="button" class="active" data-pane="overview" aria-selected="true">Обзор связей</button>
+      <button type="button" data-pane="fields" aria-selected="false">Поля сущностей</button>
+      <button type="button" data-pane="joins" aria-selected="false">Таблица связей</button>
+      <a href="data-model.md">data-model.md</a>
+    </div>
+  </header>
+
+  <main>
+    <div id="pane-overview" class="pane visible">
+      <section>
+        <h2>Как читать модель за 30 секунд</h2>
+        <p class="lead">Цепочка расчёта цены идёт слева направо: строка прогноза → подходящая формула → термы → значения из справочников.</p>
+        <div class="flow">
+          <div class="flow-step">
+            <strong>1. Прогноз</strong>
+            <span>ssp</span>
+          </div>
+          <div class="flow-step">
+            <strong>2. Формула</strong>
+            <span>formulas</span>
+          </div>
+          <div class="flow-step">
+            <strong>3. Термы</strong>
+            <span>formula_components</span>
+          </div>
+          <div class="flow-step">
+            <strong>4. Значения</strong>
+            <span>quotes · currency_rates · Значение</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>ER-диаграмма (связи)</h2>
+        <p class="lead">Кардинальность в нотации Crow’s foot. PK отмечены в блоках сущностей.</p>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+erDiagram
+  SSP["ssp — прогноз спроса"] {
+    int row_id PK
+    date period PK
+    string client_id
+    int mtr_nsi_code
+    string contract
+    string currency
+    decimal forecast
+  }
+
+  FORMULAS["formulas — формула"] {
+    string Ключ_формулы PK
+    string Формула
+    string client_id
+    string Подгруппа_материалов FK
+    int Материал FK
+    date Действительно_с
+    date Действительно_по
+    date Дата_создания
+    string Неактивна
+  }
+
+  COMPONENTS["formula_components — терм"] {
+    string Формула FK
+    int Номер_терма
+    string Имя_переменной
+    string Тип_фиксированного_терма FK
+    decimal Значение
+    string Имя_котировки FK
+    string Происхождение_котировки FK
+  }
+
+  TERM_TYPES["term_types — тип терма"] {
+    string type_code PK
+    string type_label
+    string category
+    string value_source
+  }
+
+  MATERIAL_GROUPS["material_groups — группа M"] {
+    string hname PK
+    string code_nsi PK
+    string V_MTR_name
+    string mtr_pf_name_lvl_2
+    string mtr_pf_name_lvl_3
+  }
+
+  QUOTE_MAPPING["quote_mapping — маппинг"] {
+    string Происхождение_котировки PK
+    string Имя_котировки PK
+    string ID_в_озере_данных FK
+    string ID2_в_озере_данных
+    string Валюта_котировки
+  }
+
+  QUOTES["quotes — котировка"] {
+    string quote_code PK
+    date quote_date PK
+    string quote_type PK
+    decimal quote_val
+    string quote_currency
+  }
+
+  CURRENCY_RATES["currency_rates — курс"] {
+    string currency_name PK
+    date calday PK
+    string version_type
+    decimal currency_value
+  }
+
+  FORMULAS ||--o{ COMPONENTS : "Ключ формулы = Формула"
+  COMPONENTS }o--|| TERM_TYPES : "Тип фиксированного терма = type_code"
+  COMPONENTS }o--o| QUOTE_MAPPING : "Имя котировки (+ происхождение)"
+  QUOTE_MAPPING }o--o{ QUOTES : "ID в озере данных = quote_code"
+  COMPONENTS }o--o{ CURRENCY_RATES : "тип терма 5 → курс"
+  FORMULAS }o--o{ SSP : "client_id"
+  FORMULAS }o--o| MATERIAL_GROUPS : "Подгруппа материалов = hname"
+  SSP }o--o{ MATERIAL_GROUPS : "mtr_nsi_code = code_nsi"
+  FORMULAS }o--o{ MATERIAL_GROUPS : "Материал = code_nsi"
+          </pre>
+        </div>
+        <div class="legend">
+          <span><i class="dot pk"></i> PK — первичный / логический ключ</span>
+          <span><i class="dot fk"></i> FK — поле связи</span>
+          <span><i class="dot rel"></i> линия — join по именам колонок Excel</span>
+        </div>
+        <p class="hint">Имена полей на диаграмме слегка нормализованы (пробелы → <code>_</code>) ради читаемости Mermaid; канонические имена — в <code>data-model.md</code> и на вкладке «Поля».</p>
+      </section>
+    </div>
+
+    <div id="pane-fields" class="pane">
+      <section>
+        <h2>UML class diagram — все поля</h2>
+        <p class="lead">Атрибуты как в Excel. Прокрутите по горизонтали при необходимости.</p>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+classDiagram
+  direction TB
+
+  class ssp {
+    <<entity · ssp.xlsx>>
+    +int row_id
+    +date period
+    +int customer_asv
+    +string customer
+    +int mtr_nsi_code
+    +string mtr_nsi_name
+    +string contract
+    +string currency
+    +decimal forecast
+    +string country
+    +string region
+    +string market
+    +string client_id
+    +string client_name
+  }
+
+  class formulas {
+    <<entity · formulas.xlsx>>
+    +string Ключ формулы
+    +string Формула
+    +string Подгруппа материалов
+    +int Деловой партнер
+    +datetime Действительно с
+    +date Действительно по
+    +date Дата создания
+    +string Неактивна
+    +string Тип цены
+    +string ВалютаДокумента
+    +int Материал
+    +string client_id
+    +string client_name
+  }
+
+  class formula_components {
+    <<entity · formula_components.xlsx>>
+    +string Формула
+    +int Номер терма в формуле
+    +string Вид условий
+    +string Имя переменной
+    +string Действительно с
+    +string Действительно по
+    +string Тип фиксированного терма
+    +decimal Значение
+    +string Валюта
+    +string Имя котировки
+    +string Вид котировки
+    +int Правило расчета
+    +string Правило опред. периода валютный курс
+    +string Прав. опред. периода
+    +int Вид расчета терма
+    +int Фактор 1
+    +int Фактор 2
+    +string Происхождение котировки
+  }
+
+  class term_types {
+    <<entity · term_types.xlsx>>
+    +string type_code
+    +string type_label
+    +string category
+    +string fixed_term_kind
+    +string description
+    +string value_source
+  }
+
+  class material_groups {
+    <<entity · material_groups.xlsx>>
+    +string hname
+    +string code_nsi
+    +string V_MTR_name
+    +string mtr_pf_name_lvl_2
+    +string mtr_pf_name_lvl_3
+    +string tlevel
+    +string datuv
+    +string datub
+    +string leaf
+  }
+
+  class quote_mapping {
+    <<entity · quote_mapping.xlsx>>
+    +string Происхождение котировки
+    +string Вид котировки
+    +string Имя котировки
+    +string ID в озере данных
+    +string ID2 в озере данных
+    +string Валюта котировки
+  }
+
+  class quotes {
+    <<entity · quotes.xlsx>>
+    +string quote_type
+    +string quote_name
+    +string tech_quote_name
+    +string quote_code
+    +date quote_date
+    +string quote_currency
+    +decimal quote_val
+    +datetime tech_load_ts
+  }
+
+  class currency_rates {
+    <<entity · currency_rates.xlsx>>
+    +string version_type
+    +string currency_name
+    +string calmonth
+    +date calday
+    +decimal currency_value
+  }
+
+  formulas "1" --> "*" formula_components : Ключ формулы
+  formula_components "*" --> "1" term_types : Тип фиксированного терма
+  formula_components "*" --> "0..1" quote_mapping : Имя котировки
+  quote_mapping "0..1" --> "*" quotes : ID в озере данных
+  formula_components "*" --> "*" currency_rates : тип 5
+  formulas "*" --> "*" ssp : client_id
+  formulas "*" --> "0..1" material_groups : Подгруппа / Материал
+  ssp "*" --> "*" material_groups : mtr_nsi_code
+          </pre>
+        </div>
+      </section>
+    </div>
+
+    <div id="pane-joins" class="pane">
+      <section>
+        <h2>Связи join-по-join</h2>
+        <p class="lead">Точные условия соединения колонок — как в <code>data-model.md</code>.</p>
+        <table class="rel">
+          <thead>
+            <tr>
+              <th>От</th>
+              <th>К</th>
+              <th>Условие</th>
+              <th>Кардинальность</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>formulas</code></td>
+              <td><code>formula_components</code></td>
+              <td><code>Ключ формулы</code> = <code>Формула</code></td>
+              <td>1 : N (полное покрытие)</td>
+            </tr>
+            <tr>
+              <td><code>formula_components</code></td>
+              <td><code>term_types</code></td>
+              <td><code>Тип фиксированного терма</code> = <code>type_code</code></td>
+              <td>N : 1</td>
+            </tr>
+            <tr>
+              <td><code>formulas</code></td>
+              <td><code>ssp</code></td>
+              <td><code>client_id</code> = <code>client_id</code></td>
+              <td>N : M (по клиенту)</td>
+            </tr>
+            <tr>
+              <td><code>formulas</code></td>
+              <td><code>material_groups</code></td>
+              <td><code>Подгруппа материалов</code> = <code>hname</code></td>
+              <td>N : 1 (покрытие неполное)</td>
+            </tr>
+            <tr>
+              <td><code>formulas</code></td>
+              <td><code>material_groups</code> / <code>ssp</code></td>
+              <td><code>Материал</code> ↔ <code>code_nsi</code> / <code>mtr_nsi_code</code></td>
+              <td>N : M</td>
+            </tr>
+            <tr>
+              <td><code>ssp</code></td>
+              <td><code>material_groups</code></td>
+              <td><code>mtr_nsi_code</code> (как строка) = <code>code_nsi</code></td>
+              <td>N : M</td>
+            </tr>
+            <tr>
+              <td><code>formula_components</code></td>
+              <td><code>quote_mapping</code></td>
+              <td><code>Имя котировки</code> (+ при необходимости <code>Происхождение котировки</code>)</td>
+              <td>N : 0..1</td>
+            </tr>
+            <tr>
+              <td><code>quote_mapping</code></td>
+              <td><code>quotes</code></td>
+              <td><code>ID в озере данных</code> = <code>quote_code</code></td>
+              <td>1 : N</td>
+            </tr>
+            <tr>
+              <td><code>formula_components</code></td>
+              <td><code>currency_rates</code></td>
+              <td>тип терма <code>5</code> → <code>currency_name</code> + <code>calday</code></td>
+              <td>логический join</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const buttons = document.querySelectorAll(".toolbar button[data-pane]");
+    const panes = {
+      overview: document.getElementById("pane-overview"),
+      fields: document.getElementById("pane-fields"),
+      joins: document.getElementById("pane-joins")
+    };
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-pane");
+        buttons.forEach((b) => {
+          b.classList.toggle("active", b === btn);
+          b.setAttribute("aria-selected", b === btn ? "true" : "false");
+        });
+        Object.entries(panes).forEach(([key, el]) => {
+          el.classList.toggle("visible", key === id);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
