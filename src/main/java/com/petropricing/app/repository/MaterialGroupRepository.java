@@ -1,0 +1,8 @@
+package com.petropricing.app.repository;
+
+import com.petropricing.app.domain.MaterialGroup;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface MaterialGroupRepository extends JpaRepository<MaterialGroup, Long> {
+}
+
