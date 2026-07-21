@@ -1,0 +1,2 @@
+## Стек
+Java 17, Spring Boot 3, Spring Data JPA, База данных H2, Liquibase (для миграций БД), Thymeleaf + HTMX + Tailwind CSS.
