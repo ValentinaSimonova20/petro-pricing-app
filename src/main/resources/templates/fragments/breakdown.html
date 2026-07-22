@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="breakdown">
+  <div th:if="${breakdown == null}" class="card">
+    <p class="muted" style="margin:0">Расшифровка не найдена.</p>
+  </div>
+
+  <div th:if="${breakdown != null}" class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+      <div>
+        <h2 style="margin:0 0 4px;font-size:1.2rem;color:var(--dark)"
+            th:text="${forecast != null and forecast.customer != null} ? ${forecast.customer} : ${breakdown.clientId}">—</h2>
+        <div class="muted"
+             th:text="'row_id=' + ${breakdown.rowId} + ' · period=' + ${breakdown.period} + (forecast != null and forecast.mtrNsiName != null ? ' · ' + forecast.mtrNsiName : '')">—</div>
+      </div>
+      <div>
+        <span class="badge"
+              th:classappend="${breakdown.status != null and breakdown.status.name().startsWith('OK')} ? (${breakdown.status.name() == 'OK_MULTI_FORMULA'} ? ' warn' : ' ok') : ' error'"
+              th:text="${breakdown.status}">—</span>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:0">Формула, по которой считаем</div>
+    <div style="border:1px solid var(--dna);background:#f0f9fa;border-radius:10px;padding:14px 16px">
+      <div style="font-weight:700;font-family:ui-monospace,Menlo,monospace" th:text="${breakdown.selectedFormulaKey} ?: '—'"></div>
+      <div class="muted" style="font-size:.8rem;margin-top:4px"
+           th:if="${breakdown.extendedValidity}">подбор с продлением срока действия</div>
+      <pre style="font-family:ui-monospace,Menlo,Consolas,monospace;background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-size:.86rem;margin:8px 0 0;line-height:1.7;white-space:pre-wrap"
+           th:text="${breakdown.formulaText} ?: '—'"></pre>
+    </div>
+
+    <div th:if="${breakdown.statusReason != null}"
+         style="background:#eef8f8;border:1px solid #c5e8ea;border-radius:8px;padding:11px 14px;font-size:.84rem;color:#0b4f52;margin:14px 0"
+         th:text="${breakdown.statusReason}"></div>
+
+    <div th:if="${breakdown.candidateFormulaKeys != null and !#lists.isEmpty(breakdown.candidateFormulaKeys)}">
+      <div class="section-title">Кандидаты формул</div>
+      <div style="font-family:ui-monospace,Menlo,monospace;font-size:.84rem"
+           th:text="${#strings.listJoin(breakdown.candidateFormulaKeys, ', ')}"></div>
+    </div>
+
+    <div th:if="${breakdown.warnings != null and !#lists.isEmpty(breakdown.warnings)}">
+      <div class="section-title">Warnings</div>
+      <ul style="margin:0;padding-left:18px;font-size:.84rem">
+        <li th:each="w : ${breakdown.warnings}" th:text="${w}"></li>
+      </ul>
+    </div>
+
+    <div class="section-title">Компоненты формулы</div>
+    <div style="overflow:auto" th:if="${breakdown.components != null and !#lists.isEmpty(breakdown.components)}">
+      <table>
+        <thead>
+        <tr>
+          <th>Переменная</th>
+          <th>Тип</th>
+          <th>Категория</th>
+          <th>Значение</th>
+          <th>Источник</th>
+          <th>Дата</th>
+          <th>Примечание</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="c : ${breakdown.components}" th:style="${!c.resolved} ? 'background:#FAEEDA' : null">
+          <td style="font-family:ui-monospace,Menlo,monospace" th:text="${c.variableName}"></td>
+          <td th:text="${c.termTypeCode}"></td>
+          <td th:text="${c.category}"></td>
+          <td class="price" th:text="${c.value}"></td>
+          <td th:text="${c.source}"></td>
+          <td th:text="${c.valueDate}"></td>
+          <td th:text="${c.note}"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" th:unless="${breakdown.components != null and !#lists.isEmpty(breakdown.components)}">Компоненты отсутствуют.</p>
+
+    <div class="section-title">Итоговая цена</div>
+    <div class="price" style="font-size:1.3rem"
+         th:text="${breakdown.price != null} ? ${breakdown.price} + ' ' + ${breakdown.currency} : 'цена не посчитана'">—</div>
+
+    <div style="margin-top:22px">
+      <button type="button" class="primary" onclick="switchTab('results')">Готово, вернуться к результатам</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,67 @@
+databaseChangeLog:
+  - changeSet:
+      id: 02-create-calculation-result
+      author: petri
+      changes:
+        - createTable:
+            tableName: calculation_result
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_calculation_result
+              - column:
+                  name: forecast_id
+                  type: BIGINT
+              - column:
+                  name: row_id
+                  type: INT
+              - column:
+                  name: period
+                  type: DATE
+              - column:
+                  name: client_id
+                  type: VARCHAR(64)
+              - column:
+                  name: mtr_nsi_code
+                  type: VARCHAR(64)
+              - column:
+                  name: contract
+                  type: VARCHAR(64)
+              - column:
+                  name: status
+                  type: VARCHAR(64)
+              - column:
+                  name: status_reason
+                  type: VARCHAR(1024)
+              - column:
+                  name: selected_formula_key
+                  type: VARCHAR(128)
+              - column:
+                  name: candidate_formula_keys
+                  type: CLOB
+              - column:
+                  name: formula_text
+                  type: CLOB
+              - column:
+                  name: price
+                  type: "DECIMAL(38,10)"
+              - column:
+                  name: currency
+                  type: VARCHAR(16)
+              - column:
+                  name: extended_validity
+                  type: BOOLEAN
+              - column:
+                  name: candidate_count
+                  type: INT
+              - column:
+                  name: warnings_json
+                  type: CLOB
+              - column:
+                  name: components_json
+                  type: CLOB
+
