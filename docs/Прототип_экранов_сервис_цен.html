@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Прототип: сервис расчёта цен — СИБУР</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --dna:#008C95; --dark:#003D4C; --mint:#77E2C3; --orange:#E64B38; --blue:#008DFC; --purple:#2E3187;
+    --bg:#f4f8fa; --panel:#fff; --border:#d7e3e8; --text:#003D4C; --muted:#5a6b76;
+    --ok-bg:#E1F5EE; --ok-tx:#0F6E56;
+    --warn-bg:#FAEEDA; --warn-tx:#854F0B;
+    --err-bg:#FCEBEB; --err-tx:#A32D2D;
+    --man-bg:#E6F1FB; --man-tx:#185FA5;
+    --radius:12px; --shadow:0 1px 3px rgba(0,61,76,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;font-size:14px}
+  header.top{position:sticky;top:0;z-index:50;background:var(--panel);border-bottom:2px solid var(--dna);box-shadow:var(--shadow)}
+  .brand{display:flex;align-items:center;gap:.85rem;padding:.75rem 1.5rem;border-bottom:1px solid var(--border)}
+  .brand b{font-size:1.15rem;font-weight:800;letter-spacing:.04em}
+  .brand span{color:var(--muted);font-size:.82rem}
+  nav.tabs{display:flex;gap:0;padding:0 1rem;overflow-x:auto}
+  nav.tabs button{appearance:none;border:none;background:none;padding:.8rem 1.1rem;font:600 .88rem Inter,sans-serif;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+  nav.tabs button.active{color:var(--dark);border-bottom-color:var(--dna)}
+  nav.tabs button:hover{color:var(--dna)}
+  main{max-width:1180px;margin:0 auto;padding:24px 22px 60px}
+  .screen{display:none}
+  .screen.active{display:block}
+  h1{font-size:1.4rem;margin:0 0 4px;font-weight:800;color:var(--dark)}
+  .sub{color:var(--muted);margin:0 0 22px;font-size:.9rem}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid-files{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-bottom:22px}
+  .file-card{border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:#fbfdfe;display:flex;flex-direction:column;gap:4px}
+  .file-card .fn{font-weight:700;font-size:.88rem}
+  .file-card .fs{color:var(--muted);font-size:.76rem;font-family:ui-monospace,Menlo,monospace}
+  .file-card .ok{color:var(--ok-tx);font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--dna);display:inline-block;flex-shrink:0}
+  .run-panel{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
+  .field{display:flex;flex-direction:column;gap:7px}
+  .field label{font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .run-panel label{font-size:.85rem}
+  select,input[type=text],input[type=number],textarea{font:inherit;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text)}
+  .run-select{font-size:1.05rem;padding:13px 16px;min-width:200px;border-radius:10px}
+  textarea{width:100%;resize:vertical;min-height:56px}
+  button.primary{background:var(--dna);color:#fff;border:none;border-radius:8px;padding:11px 20px;font:700 .92rem Inter,sans-serif;cursor:pointer}
+  button.primary:hover{background:var(--dark)}
+  button.primary:disabled{opacity:.5;cursor:not-allowed}
+  .run-panel button.primary{padding:15px 30px;font-size:1.02rem;border-radius:10px}
+  button.ghost{background:none;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 16px;font:600 .86rem Inter,sans-serif;cursor:pointer}
+  button.ghost:hover{border-color:var(--dna);color:var(--dna)}
+  button.small{padding:6px 12px;font-size:.8rem}
+  .stat-strip{display:flex;flex-wrap:wrap;gap:6px 4px;align-items:center;color:var(--muted);font-size:.86rem;padding:12px 2px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:16px}
+  .stat-strip b{color:var(--dark);font-weight:800}
+  .stat-strip .sep{color:var(--border);padding:0 2px}
+  table{width:100%;border-collapse:collapse;font-size:.86rem}
+  th,td{border-bottom:1px solid var(--border);padding:10px 12px;text-align:left;vertical-align:middle}
+  th{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  tbody tr:hover{background:#f7fbfc}
+  .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.72rem;font-weight:700;margin-right:4px}
+  .badge.ok{background:var(--ok-bg);color:var(--ok-tx)}
+  .badge.warn{background:var(--warn-bg);color:var(--warn-tx)}
+  .badge.error{background:var(--err-bg);color:var(--err-tx)}
+  .badge.manual{background:var(--man-bg);color:var(--man-tx)}
+  .price{font-weight:700}
+  .muted{color:var(--muted)}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .filter-bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .filter-bar input[type=text]{min-width:240px;flex:1}
+  .filter-pills{display:flex;gap:6px;flex-wrap:wrap}
+  .pill{padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:#fff;font-size:.78rem;font-weight:600;color:var(--muted);cursor:pointer}
+  .pill.active{background:var(--dark);color:#fff;border-color:var(--dark)}
+  .receipt-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+  .receipt-head h2{margin:0 0 4px;font-size:1.2rem}
+  .formula-box{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f4f8fa;border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-size:.86rem;margin:14px 0 18px;line-height:1.7}
+  .active-formula{border:1px solid var(--dna);background:#f0f9fa;border-radius:10px;padding:14px 16px}
+  .active-formula .formula-box{margin:8px 0 0;background:#fff}
+  .cand-list{display:flex;flex-direction:column;gap:10px;margin:10px 0 0}
+  .cand{border:1px solid var(--border);border-radius:8px;padding:12px 14px;cursor:pointer}
+  .cand:hover{border-color:var(--dna)}
+  .cand code{font-weight:700}
+  .cand .cand-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:2px}
+  .cand .cand-formula{margin:6px 0 0;padding:8px 10px;font-size:.78rem}
+  .collapse-toggle{background:none;border:none;color:var(--dna);font:600 .84rem Inter,sans-serif;cursor:pointer;padding:10px 0;display:flex;align-items:center;gap:6px}
+  .collapse-panel{display:none;margin-top:2px}
+  .collapse-panel.open{display:block}
+  .note{background:#fff5f3;border:1px solid #f3d7d0;border-radius:8px;padding:11px 14px;font-size:.84rem;color:#7a3826;margin:14px 0}
+  .note.info{background:#eef8f8;border-color:#c5e8ea;color:#0b4f52}
+  .comp-input{width:150px}
+  .section-title{font-weight:700;font-size:.95rem;margin:22px 0 10px;color:var(--dark)}
+  .edit-panel{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;background:#fbfdfe;border:1px dashed var(--border);border-radius:10px;padding:14px;margin-top:10px}
+  .footer-actions{display:flex;gap:10px;margin-top:22px}
+  .log-table td{font-size:.8rem}
+  .mockflag{font-size:.76rem;color:var(--muted);border-top:1px solid var(--border);margin-top:34px;padding-top:14px}
+  .export-summary{display:flex;gap:14px;flex-wrap:wrap;margin:18px 0 24px}
+  .export-summary .kpi{min-width:140px;background:linear-gradient(135deg,#eef8f8,#fff);border:1px solid #c5e8ea;border-radius:10px;padding:14px 16px}
+  .export-summary .kpi b{display:block;font-size:1.4rem;font-weight:800;color:var(--dna)}
+  .export-summary .kpi span{font-size:.78rem;color:var(--muted)}
+  .col-preview{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+  .col-preview span{background:#eef4f6;border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:.78rem;font-family:ui-monospace,monospace}
+  .state-switch{display:inline-flex;background:#eef4f6;border-radius:999px;padding:3px;margin-bottom:14px;gap:2px}
+  .sw-btn{appearance:none;border:none;background:none;padding:7px 14px;border-radius:999px;font:600 .8rem Inter,sans-serif;color:var(--muted);cursor:pointer}
+  .sw-btn.active{background:var(--panel);color:var(--dark);box-shadow:var(--shadow)}
+  .sw-caption{color:var(--muted);font-size:.76rem;margin:0 0 18px}
+  .dropzone{border:2px dashed var(--border);border-radius:var(--radius);padding:40px 20px;text-align:center;background:var(--panel);margin-bottom:22px}
+  .dropzone .dz-title{font-weight:700;font-size:1rem;margin-bottom:6px;color:var(--dark)}
+  .dropzone .dz-sub{color:var(--muted);font-size:.85rem;margin:0 auto 16px;max-width:560px}
+  .file-card.not-loaded{background:#fbfbfa;border-style:dashed}
+  .file-card .pending{color:var(--muted);font-size:.78rem}
+  .file-card .loading-txt{color:var(--dna);font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:5px}
+  .spin{width:9px;height:9px;border-radius:50%;border:2px solid #c5e8ea;border-top-color:var(--dna);display:inline-block;animation:spin .8s linear infinite;flex-shrink:0}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .bar{height:5px;border-radius:4px;background:#e4edf0;overflow:hidden;margin-top:2px}
+  .bar-fill{height:100%;background:var(--dna);transition:width .2s linear}
+  .calc-card{max-width:560px;margin:10px auto 0;text-align:center}
+  .calc-num{font-size:1.6rem;font-weight:800;color:var(--dna);margin-top:16px}
+  .ms-wrap{position:relative}
+  .ms-trigger{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;background:#fff;width:100%;text-align:left}
+  .ms-menu{position:absolute;top:calc(100% + 6px);left:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);padding:8px;z-index:20;min-width:240px;max-height:260px;overflow:auto}
+  .ms-item{display:flex;align-items:center;gap:8px;padding:8px 8px;border-radius:6px;cursor:pointer;font-size:.9rem}
+  .ms-item:hover{background:#f4f8fa}
+  .ms-check{width:16px;display:inline-block;color:var(--dna);font-weight:800}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,61,76,.45);display:none;align-items:center;justify-content:center;z-index:200}
+  .modal-box{background:#fff;border-radius:var(--radius);padding:26px;max-width:420px;width:92%;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+  .modal-box h3{margin:0 0 10px;font-size:1.05rem;color:var(--dark)}
+  .modal-box p{margin:0 0 22px;color:var(--muted);font-size:.9rem}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <b>СИБУР</b>
+    <div>
+      <div style="font-weight:700">Сервис расчёта цен — прототип экранов</div>
+      <span>Кликабельный макет для обсуждения, не рабочий расчёт</span>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="switchTab('upload')">1. Загрузка</button>
+    <button class="tab-btn" onclick="switchTab('calc')">2. Расчёт</button>
+    <button class="tab-btn" onclick="switchTab('results')">3. Результаты</button>
+    <button class="tab-btn" onclick="switchTab('receipt')">4. Расшифровка строки</button>
+    <button class="tab-btn" onclick="switchTab('export')">5. Экспорт</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ЭКРАН 1: ЗАГРУЗКА -->
+  <section id="screen-upload" class="screen active">
+    <h1>Загрузка данных</h1>
+    <p class="sub" id="upload-sub">Все файлы на месте — можно переходить к расчёту.</p>
+
+    <div class="state-switch">
+      <button class="sw-btn" onclick="setUploadState('empty')">Пусто</button>
+      <button class="sw-btn" onclick="setUploadState('loading')">Идёт загрузка</button>
+      <button class="sw-btn" onclick="setUploadState('done')">Готово</button>
+    </div>
+    <p class="sw-caption">Переключатель нужен только для просмотра макета — в реальном интерфейсе его не будет, экран сам меняется по ходу загрузки.</p>
+
+    <div class="dropzone" id="dropzone" style="display:none">
+      <div class="dz-title">Перетащите файлы сюда</div>
+      <div class="dz-sub">или выберите на компьютере — система сама определит, что есть что, по содержимому файла, не по имени: прогноз спроса, каталог формул, компоненты формул, типы термов, котировки, маппинг котировок, курсы валют, группы материалов</div>
+      <button class="primary" onclick="setUploadState('loading')">Выбрать файлы</button>
+    </div>
+
+    <div class="grid-files" id="file-grid"></div>
+
+    <div class="card" id="run-card" style="display:none">
+      <div class="section-title" style="margin-top:0">Параметры расчёта</div>
+      <p class="muted" style="margin:-2px 0 16px;font-size:.85rem">Список периодов, групп и клиентов подтягивается из загруженных файлов — сюда не нужно вводить ничего вручную.</p>
+      <div class="run-panel">
+        <div class="field" style="min-width:250px">
+          <label>Период (можно несколько)</label>
+          <div class="ms-wrap" id="period-ms-wrap">
+            <button type="button" class="run-select ms-trigger" onclick="togglePeriodMenu()">
+              <span id="period-ms-label">Июнь 2026</span><span>▾</span>
+            </button>
+            <div class="ms-menu" id="period-ms-menu" style="display:none"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Группа материалов</label>
+          <select class="run-select"><option>Все группы</option><option>ПП Статсополимер (Рандом)</option><option>Полистирол ПСОН</option><option>Прочие полуфабрикаты</option></select>
+        </div>
+        <div class="field">
+          <label>Клиент</label>
+          <select class="run-select"><option>Все клиенты</option></select>
+        </div>
+        <button class="primary" id="run-btn" onclick="startCalculation()">Рассчитать</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ЭКРАН 2: РАСЧЁТ -->
+  <section id="screen-calc" class="screen">
+    <h1>Идёт расчёт</h1>
+    <p class="sub">Не закрывайте вкладку — считаем цену по каждой строке прогноза.</p>
+    <div class="card calc-card">
+      <div class="bar" style="height:10px"><div class="bar-fill" id="calc-bar" style="width:0%"></div></div>
+      <div class="calc-num" id="calc-count">0 из 500</div>
+      <div class="muted" style="margin-top:2px">строк прогноза обработано</div>
+      <div class="muted" style="margin-top:14px;font-size:.85rem" id="calc-eta">Осталось ≈ —</div>
+    </div>
+    <p class="mockflag" style="max-width:560px;margin:24px auto 0">Оценка времени и прогресс «строка за строкой» реализуемы, только если бэкенд отдаёт статус по ходу расчёта — например, отвечает на периодический опрос или шлёт события, а не молчит до одного финального ответа. Это отдельная техническая задача для API, не бесплатное следствие самого расчёта.</p>
+  </section>
+
+  <!-- ЭКРАН 3: РЕЗУЛЬТАТЫ -->
+  <section id="screen-results" class="screen">
+    <h1>Результаты расчёта</h1>
+    <p class="sub">Период: июнь 2026 · сначала показаны строки, которые требуют внимания.</p>
+
+    <div class="stat-strip">
+      <span><b>441</b> из 500 посчитано</span><span class="sep">·</span>
+      <span><b>27</b> требуют выбора формулы</span><span class="sep">·</span>
+      <span><b>32</b> ошибки</span><span class="sep">·</span>
+      <span><b>6</b> ручных правок</span>
+    </div>
+
+    <div class="toolbar">
+      <div class="legend">
+        <span><i style="background:var(--ok-tx)"></i>посчитано</span>
+        <span><i style="background:var(--warn-tx)"></i>несколько формул</span>
+        <span><i style="background:var(--err-tx)"></i>ошибка</span>
+        <span><i style="background:var(--man-tx)"></i>ручная правка</span>
+      </div>
+      <button class="primary" onclick="switchTab('export')">Перейти к выгрузке →</button>
+    </div>
+
+    <div class="filter-bar">
+      <input type="text" id="filter-text" placeholder="Поиск по клиенту или материалу" oninput="renderTable()">
+      <div class="filter-pills" id="filter-pills"></div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <table>
+        <thead>
+          <tr><th>row_id</th><th>Клиент</th><th>Материал</th><th>Статус</th><th>Объём, т</th><th>Цена</th><th>Сумма</th><th></th></tr>
+        </thead>
+        <tbody id="results-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ЭКРАН 4: РАСШИФРОВКА -->
+  <section id="screen-receipt" class="screen">
+    <button class="ghost small" onclick="switchTab('results')" style="margin-bottom:14px">← Назад к результатам</button>
+
+    <div class="card">
+      <div class="receipt-head">
+        <div>
+          <h2 id="r-title">—</h2>
+          <div class="muted" id="r-sub">—</div>
+        </div>
+        <div id="r-badges"></div>
+      </div>
+
+      <div class="section-title" style="margin-top:0">Формула, по которой считаем</div>
+      <div class="active-formula" id="r-active-formula"></div>
+      <div id="r-note"></div>
+
+      <div id="r-other-block" style="display:none">
+        <button type="button" class="collapse-toggle" onclick="toggleOtherFormulas()">
+          <span id="r-other-caret">▸</span> <span id="r-other-label">Показать другие формулы для этой строки</span>
+        </button>
+        <div class="collapse-panel" id="r-other-panel"></div>
+      </div>
+
+      <div class="section-title">Компоненты формулы</div>
+      <table>
+        <thead><tr><th>Переменная</th><th>Тип</th><th>Значение</th><th>Источник</th><th></th></tr></thead>
+        <tbody id="r-components"></tbody>
+      </table>
+
+      <div class="section-title">Итоговая цена</div>
+      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+        <div class="price" style="font-size:1.3rem" id="r-price">—</div>
+        <button class="ghost small" onclick="toggleOverride()">Указать цену вручную</button>
+      </div>
+      <div class="edit-panel" id="override-panel" style="display:none">
+        <div class="field">
+          <label>Цена вручную</label>
+          <input type="number" id="override-price" class="comp-input" placeholder="напр. 99500">
+        </div>
+        <div class="field" style="flex:1;min-width:220px">
+          <label>Причина правки</label>
+          <textarea id="override-reason" placeholder="почему меняем цену — обязательно для истории"></textarea>
+        </div>
+        <button class="primary small" onclick="applyOverride()">Сохранить</button>
+      </div>
+
+      <div class="section-title">История изменений строки</div>
+      <table class="log-table">
+        <thead><tr><th>Когда</th><th>Кто</th><th>Что изменили</th></tr></thead>
+        <tbody id="r-log"></tbody>
+      </table>
+
+      <div class="footer-actions">
+        <button class="primary" onclick="switchTab('results')">Готово, вернуться к результатам</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ЭКРАН 5: ЭКСПОРТ -->
+  <section id="screen-export" class="screen">
+    <h1>Выгрузка результата</h1>
+    <p class="sub">Проверьте сводку перед скачиванием — после выгрузки файл уходит дальше по процессу.</p>
+
+    <div class="export-summary">
+      <div class="kpi"><b>500</b><span>строк в выгрузке</span></div>
+      <div class="kpi"><b>32</b><span>строк с пометкой «ошибка»</span></div>
+      <div class="kpi"><b>6</b><span>строк с ручной правкой</span></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" style="margin-top:0">В файле будут колонки</div>
+      <div class="col-preview">
+        <span>row_id</span><span>client_id</span><span>customer</span><span>material_id</span><span>period</span>
+        <span>forecast</span><span>price</span><span>amount</span><span>currency</span><span>status</span>
+        <span>manual_override</span><span>comment</span>
+      </div>
+      <button class="primary" style="margin-top:16px" onclick="attemptExport()">Скачать Excel</button>
+    </div>
+
+    <div class="card" style="margin-top:18px;overflow:auto">
+      <div class="section-title" style="margin-top:0">Предпросмотр файла</div>
+      <table id="export-preview-table" style="min-width:860px"></table>
+      <p class="muted" style="font-size:.8rem;margin-top:10px">В макете показаны только строки-примеры — в реальной выгрузке будут все посчитанные строки.</p>
+    </div>
+
+    <p class="mockflag">Это макет интерфейса для обсуждения экранов с командой — цифры и данные иллюстративные, реальный расчёт сюда не подключён.</p>
+  </section>
+
+</main>
+
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box">
+    <h3>Есть ошибки в расчёте</h3>
+    <p id="confirm-text">—</p>
+    <div class="modal-actions">
+      <button class="ghost" onclick="closeConfirmModal()">Отмена</button>
+      <button class="primary" onclick="confirmExport()">Всё равно скачать</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const files = [
+  {name:'ssp.xlsx', sizeKB:213.0, label:'Прогноз спроса'},
+  {name:'formulas.xlsx', sizeKB:42.9, label:'Каталог формул'},
+  {name:'formula_components.xlsx', sizeKB:217.4, label:'Компоненты формул'},
+  {name:'term_types.xlsx', sizeKB:6.3, label:'Типы термов'},
+  {name:'quotes.xlsx', sizeKB:16.5, label:'Котировки'},
+  {name:'quote_mapping.xlsx', sizeKB:8.1, label:'Маппинг котировок'},
+  {name:'currency_rates.xlsx', sizeKB:41.6, label:'Курсы валют'},
+  {name:'material_groups.xlsx', sizeKB:38.5, label:'Группы материалов'},
+];
+
+function fmtKB(kb){ return kb.toFixed(1).replace('.', ',') + ' КБ'; }
+function fmt(n){ return n.toLocaleString('ru-RU', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function priceLabel(r){ return r.price != null ? fmt(r.price) + ' ₽/т' : '—'; }
+function sumLabel(r){ return r.price != null ? fmt(r.price * r.forecast) + ' ₽' : '—'; }
+
+function badge(type){
+  const map = {
+    ok:['ok','посчитано'], warn:['warn','неск. формул'], error:['error','ошибка'], manual:['manual','ручная правка']
+  };
+  const [cls,label] = map[type];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+const rows = [
+  {
+    id:1024237, clientId:'CL-10039', customer:'ООО «ПЛАНЕТА-ЦЕНТР»', material:'Полипропилен SIBEX PP R085 CF/5 (1370836)', period:'2026-06',
+    forecast:171, price:null,
+    badges:['warn','error'],
+    candidates:[
+      {id:'Z900027265', created:'26.02.2026', scope:'клиент CL-10039 · группа материалов MT00000117', formulaText:'(((((( E + F + G / T ) × ( I + H ) × CUR_$_₱_M × NDS × ( I + S / D × ( L + M ) ) ) × A ) / NDS ) − P − R ) / Y ) × NDS + MP'},
+      {id:'Z900027266', created:'26.02.2026', scope:'клиент CL-10039 · материал 1370836 (напрямую)', selected:true, formulaText:'(((((( E + F + G / T ) × ( I + H ) × CUR_$_₱_M × NDS × ( I + S / D × ( L + M ) ) ) × A ) / NDS ) − P − R ) / Y ) × NDS + MP'},
+    ],
+    note:{type:'warn', text:'Обе формулы созданы в одну дату и текст у них буквально одинаковый — различаются только областью применения (группа материалов vs конкретный материал). Автоматическое правило «самая поздняя дата создания» здесь не разруливает выбор.'},
+    components:[
+      {name:'E', type:'Котировка', value:'нет данных на 2026-06', source:'quotes.xlsx — SPOT CFR CMP_07 отсутствует', editable:true},
+      {name:'F', type:'Константа', value:'292', source:'formula_components.xlsx'},
+      {name:'G', type:'Константа', value:'4 307', source:'formula_components.xlsx'},
+      {name:'CUR_$_₱_M', type:'Курс валюты', value:'71,0224 (USD, Факт, 2026-06-01)', source:'currency_rates.xlsx'},
+      {name:'P', type:'Константа', value:'28 470', source:'formula_components.xlsx'},
+      {name:'MP', type:'Константа', value:'13 851,75', source:'formula_components.xlsx'},
+    ],
+    log:[]
+  },
+  {
+    id:1034256, clientId:'CL-10157', customer:'РИОНА СИЭМЖИ ООО', material:'Полистирол, марка 525 (1182567)', period:'2026-06',
+    forecast:22, price:98728.12,
+    badges:['ok'],
+    candidates:[{id:'Z900026393', created:'27.01.2026', scope:'клиент CL-10157 · группа материалов MT0002006', selected:true, formulaText:'IF ( ( ( CPT_MOSCOW_109 − L ) / H1 ) × D < SPOT , ( ( CPT_MOSCOW_109 − L ) / H1 ) × D , SPOT )'}],
+    note:{type:'info', text:'Ветка SPOT выигрывает без похода за рыночной котировкой — цена равна константе SPOT.'},
+    components:[
+      {name:'CPT_MOSCOW_109', type:'Котировка', value:'не потребовалась', source:'ветка SPOT не использует котировку'},
+      {name:'L', type:'Константа', value:'3 650', source:'formula_components.xlsx'},
+      {name:'H1', type:'Константа', value:'0,8906', source:'formula_components.xlsx'},
+      {name:'D', type:'Константа', value:'0,7154', source:'formula_components.xlsx'},
+      {name:'SPOT', type:'Константа', value:'98 728,12', source:'formula_components.xlsx'},
+    ],
+    log:[]
+  },
+  {
+    id:1039824, clientId:'CL-10091', customer:'ООО «ТАТНЕФТЬ-АЗС ЦЕНТР»', material:'Фракция изобутан-изобутиленовая (401079)', period:'2026-06',
+    forecast:3800, price:null,
+    badges:['error'],
+    candidates:[{id:'Z900010551', created:'27.01.2023', scope:'клиент CL-10091 · материал 401079', selected:true, formulaText:'RND_X ( ( RND_X ( ( RND_X ( ( RND_X ( ( CIF_ARA − DIF − P ) × K$ − T + T1 , 2 ) − T2 ) × K1 + PROC + T3 , 2 ) − T4 ) × K2 …'}],
+    note:{type:'warn', text:'В тексте формулы не хватает 4 закрывающих скобок (обрыв на 255-м символе) — выражение не парсится. Это ошибка в источнике, не в расчёте.'},
+    components:[
+      {name:'CIF_ARA', type:'Котировка', value:'нет данных на 2026-06', source:'quotes.xlsx — CIF ARA (LARGE)_02 отсутствует'},
+      {name:'DIF', type:'Константа', value:'47,45', source:'formula_components.xlsx'},
+      {name:'K$', type:'Курс валюты', value:'71,0224 (USD, Факт, 2026-06-01)', source:'currency_rates.xlsx'},
+      {name:'PROC', type:'Константа', value:'7 519', source:'formula_components.xlsx'},
+    ],
+    log:[]
+  },
+  {id:1041210, clientId:'CL-10201', customer:'ООО «СтройХимТрейд»', material:'Полипропилен PP H030 GP/2', period:'2026-06', forecast:85, price:54120.00, badges:['ok'], candidates:[{id:'Z900019823', created:'02.03.2026', scope:'клиент CL-10201 · материал напрямую', selected:true, formulaText:'( CFR_CHINA − DISCOUNT ) × DUTY + PREMIUM'}], components:[{name:'CFR_CHINA', type:'Котировка', value:'61 250 (Факт, 2026-06-01)', source:'quotes.xlsx'},{name:'DISCOUNT', type:'Константа', value:'1 200', source:'formula_components.xlsx'}], log:[]},
+  {id:1052390, clientId:'CL-10287', customer:'ООО «Полимер Юг»', material:'Полистирол 585V', period:'2026-06', forecast:40, price:112500.00, badges:['ok','manual'], candidates:[{id:'Z900021190', created:'14.05.2026', scope:'клиент CL-10287 · материал напрямую', selected:true, formulaText:'( NWE + D ) × EUR × 20'}], components:[{name:'NWE', type:'Котировка', value:'2 480 (ОФ, 2026-06-01)', source:'quotes.xlsx'},{name:'EUR', type:'Курс валюты', value:'92,4', source:'currency_rates.xlsx'}], log:[{when:'21.07.2026 14:02', who:'А. Юрина', what:'Цена изменена вручную: 108 300,00 → 112 500,00 ₽/т. Причина: расхождение с прайс-листом поставщика.'}]},
+  {id:1019564, clientId:'CL-10018', customer:'АО «Синтезкаучук Трейдинг»', material:'Бутадиен-стирольный каучук', period:'2026-06', forecast:60, price:null, badges:['warn'], candidates:[{id:'Z900008810', created:'11.01.2026', scope:'клиент CL-10018 · группа материалов', formulaText:'( BUTADIENE_NE_ASIA + PREMIUM + LOGISTICS ) × CUR'},{id:'Z900008821', created:'19.04.2026', scope:'клиент CL-10018 · материал напрямую', selected:true, formulaText:'( BUTADIENE_NE_ASIA + PREMIUM ) × CUR'}], note:{type:'warn', text:'Формулы различаются не только областью действия, но и текстом — у одной есть дополнительное слагаемое LOGISTICS. Это меняет цену, выбор нельзя делать «на автомате».'}, components:[{name:'BUTADIENE_NE_ASIA', type:'Котировка', value:'1 970 (ОФ, 2026-06-01)', source:'quotes.xlsx'}], log:[]},
+  {id:1044782, clientId:'CL-10133', customer:'ООО «ПластТорг»', material:'Полипропилен PP H253 FF/7', period:'2026-06', forecast:150, price:null, badges:['error'], candidates:[{id:'Z900017410', created:'05.02.2026', scope:'клиент CL-10133 · материал напрямую', selected:true, formulaText:'( PPH_CFR_TURKEY − DISCOUNT ) × DUTY'}], components:[{name:'PPH_CFR_TURKEY', type:'Котировка', value:'нет данных на 2026-06', source:'quotes.xlsx — не найдена', editable:true}], log:[]},
+  {id:1036650, clientId:'CL-10098', customer:'ООО «ПЭТ Ресурс»', material:'Полиэтилентерефталат', period:'2026-06', forecast:130, price:78990.00, badges:['ok'], candidates:[{id:'Z900022014', created:'20.03.2026', scope:'клиент CL-10098 · материал напрямую', selected:true, formulaText:'( PET_EU + LOGISTICS ) × CUR'}], components:[{name:'PET_EU', type:'Котировка', value:'840 (Факт, 2026-06-01)', source:'quotes.xlsx'}], log:[]},
+  {id:1049921, clientId:'CL-10256', customer:'ООО «Нефтехим Логистика»', material:'Бензол', period:'2026-06', forecast:210, price:46210.75, badges:['ok'], candidates:[{id:'Z900030102', created:'02.06.2026', scope:'клиент CL-10256 · материал напрямую', selected:true, formulaText:'BENZENE_FCA + PREMIUM'}], components:[{name:'BENZENE_FCA', type:'Котировка', value:'523 (Факт, 2026-06-01)', source:'quotes.xlsx'}], log:[]},
+  {id:1028873, clientId:'CL-10064', customer:'ООО «Полиэтилен Снаб»', material:'Полиэтилен HD 03580 SB', period:'2026-06', forecast:95, price:61340.50, badges:['ok'], candidates:[{id:'Z900014410', created:'09.02.2026', scope:'клиент CL-10064 · материал напрямую', selected:true, formulaText:'( HDPE_BM_CFR_TURKEY − DISCOUNT ) × DUTY'}], components:[{name:'HDPE_BM_CFR_TURKEY', type:'Котировка', value:'1 190 (ОФ, 2026-06-01)', source:'quotes.xlsx'}], log:[]},
+];
+
+let currentId = rows[0].id;
+
+function statusRank(r){
+  if(r.badges.includes('error')) return 0;
+  if(r.badges.includes('warn')) return 1;
+  if(r.badges.includes('manual')) return 2;
+  return 3;
+}
+
+// ---------- Экран 1: загрузка ----------
+let uploadState = 'empty';
+let loadingTimer = null;
+
+function setUploadState(state){
+  uploadState = state;
+  if(loadingTimer){ clearTimeout(loadingTimer); loadingTimer = null; }
+  if(state === 'loading'){
+    loadingTimer = setTimeout(() => setUploadState('done'), 1800);
+  }
+  renderFiles();
+}
+
+function renderFiles(){
+  document.querySelectorAll('.sw-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['empty','loading','done'][i] === uploadState);
+  });
+  document.getElementById('dropzone').style.display = uploadState === 'empty' ? 'block' : 'none';
+  document.getElementById('file-grid').style.display = uploadState === 'empty' ? 'none' : 'grid';
+  document.getElementById('run-card').style.display = uploadState === 'done' ? 'block' : 'none';
+
+  const runBtn = document.getElementById('run-btn');
+  if(runBtn) runBtn.disabled = uploadState !== 'done';
+
+  const sub = document.getElementById('upload-sub');
+  if(uploadState === 'empty') sub.textContent = 'Нужно загрузить файлы с данными, прежде чем запускать расчёт.';
+  if(uploadState === 'loading') sub.textContent = 'Файлы загружаются — система определяет содержимое каждого.';
+  if(uploadState === 'done') sub.textContent = 'Все файлы на месте — можно переходить к расчёту.';
+
+  if(uploadState === 'empty') return;
+
+  if(uploadState === 'loading'){
+    document.getElementById('file-grid').innerHTML = files.map((f,i) => {
+      if(i === 0) return `
+        <div class="file-card">
+          <div class="fn">${f.label}</div>
+          <div class="fs">${f.name}</div>
+          <div class="loading-txt"><span class="spin"></span>распознаём содержимое…</div>
+          <div class="bar"><div class="bar-fill" style="width:60%"></div></div>
+          <div class="fs">${fmtKB(f.sizeKB*0.6)} из ${fmtKB(f.sizeKB)}</div>
+        </div>`;
+      if(i === 1 || i === 2) return `
+        <div class="file-card">
+          <div class="fn">${f.label}</div>
+          <div class="fs">${f.name}</div>
+          <div class="ok"><span class="dot"></span>${fmtKB(f.sizeKB)} из ${fmtKB(f.sizeKB)}</div>
+        </div>`;
+      return `
+        <div class="file-card not-loaded">
+          <div class="fn">${f.label}</div>
+          <div class="fs">${f.name}</div>
+          <div class="pending">в очереди</div>
+        </div>`;
+    }).join('');
+    return;
+  }
+
+  document.getElementById('file-grid').innerHTML = files.map(f => `
+    <div class="file-card">
+      <div class="fn">${f.label}</div>
+      <div class="fs">${f.name}</div>
+      <div class="ok"><span class="dot"></span>${fmtKB(f.sizeKB)} из ${fmtKB(f.sizeKB)}</div>
+    </div>`).join('');
+}
+
+// период — множественный выбор
+const periods = ['Июнь 2026','Июль 2026','Август 2026','Сентябрь 2026','Октябрь 2026','Ноябрь 2026','Декабрь 2026','Январь 2027','Февраль 2027','Март 2027'];
+let selectedPeriods = new Set(['Июнь 2026']);
+
+function togglePeriodMenu(){
+  const m = document.getElementById('period-ms-menu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+function togglePeriod(p){
+  if(selectedPeriods.has(p)){
+    if(selectedPeriods.size > 1) selectedPeriods.delete(p);
+  } else {
+    selectedPeriods.add(p);
+  }
+  renderPeriodMenu();
+}
+function renderPeriodMenu(){
+  document.getElementById('period-ms-menu').innerHTML = periods.map(p => `
+    <div class="ms-item" onclick="togglePeriod('${p}')">
+      <span class="ms-check">${selectedPeriods.has(p) ? '✓' : ''}</span>${p}
+    </div>`).join('');
+  const arr = periods.filter(p => selectedPeriods.has(p));
+  document.getElementById('period-ms-label').textContent = arr.length <= 2 ? arr.join(', ') : arr.length + ' периодов выбрано';
+}
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('period-ms-wrap');
+  const menu = document.getElementById('period-ms-menu');
+  if(wrap && menu && !wrap.contains(e.target)) menu.style.display = 'none';
+});
+
+// ---------- Экран 2: расчёт ----------
+const CALC_TOTAL = 500;
+let calcInterval = null;
+let calcRunning = false;
+
+function updateCalc(n){
+  const pct = Math.round(n / CALC_TOTAL * 100);
+  document.getElementById('calc-bar').style.width = pct + '%';
+  document.getElementById('calc-count').textContent = n + ' из ' + CALC_TOTAL;
+  const remaining = CALC_TOTAL - n;
+  const etaSec = Math.max(1, Math.round(remaining / 45));
+  document.getElementById('calc-eta').textContent = n >= CALC_TOTAL ? 'Готово' : 'Осталось ≈ ' + etaSec + ' сек';
+}
+function renderCalcStatic(){
+  clearInterval(calcInterval);
+  updateCalc(340);
+}
+function startCalculation(){
+  calcRunning = true;
+  switchTab('calc');
+  let n = 0;
+  updateCalc(0);
+  clearInterval(calcInterval);
+  calcInterval = setInterval(() => {
+    n += Math.ceil(Math.random()*30) + 10;
+    if(n >= CALC_TOTAL) n = CALC_TOTAL;
+    updateCalc(n);
+    if(n >= CALC_TOTAL){
+      clearInterval(calcInterval);
+      calcRunning = false;
+      setTimeout(() => switchTab('results'), 500);
+    }
+  }, 220);
+}
+
+// ---------- Экран 3: результаты ----------
+const statusFilters = [
+  {key:'all', label:'Все'}, {key:'ok', label:'Посчитано'}, {key:'warn', label:'Несколько формул'},
+  {key:'error', label:'Ошибка'}, {key:'manual', label:'Ручная правка'}
+];
+let filterStatus = 'all';
+
+function renderFilterPills(){
+  document.getElementById('filter-pills').innerHTML = statusFilters.map(f => `
+    <button type="button" class="pill ${filterStatus===f.key?'active':''}" onclick="setFilterStatus('${f.key}')">${f.label}</button>`).join('');
+}
+function setFilterStatus(key){ filterStatus = key; renderFilterPills(); renderTable(); }
+
+function renderTable(){
+  const qEl = document.getElementById('filter-text');
+  const q = qEl ? qEl.value.toLowerCase().trim() : '';
+  let list = rows.filter(r => {
+    if(filterStatus !== 'all' && !r.badges.includes(filterStatus)) return false;
+    if(q && !(r.customer.toLowerCase().includes(q) || r.material.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  const sorted = [...list].sort((a,b)=>statusRank(a)-statusRank(b));
+  document.getElementById('results-tbody').innerHTML = sorted.length ? sorted.map(r => `
+    <tr>
+      <td>${r.id}</td>
+      <td>${r.customer}</td>
+      <td>${r.material}</td>
+      <td>${r.badges.map(badge).join('')}</td>
+      <td>${r.forecast.toLocaleString('ru-RU')}</td>
+      <td class="price">${priceLabel(r)}</td>
+      <td class="price">${sumLabel(r)}</td>
+      <td><button class="ghost small" onclick="openReceipt(${r.id})">Расшифровка</button></td>
+    </tr>`).join('') : '<tr><td colspan="8" class="muted" style="text-align:center;padding:24px">Ничего не найдено под текущий фильтр</td></tr>';
+}
+
+function findRow(id){ return rows.find(r => r.id === id); }
+
+function openReceipt(id){
+  currentId = id;
+  switchTab('receipt');
+  renderReceipt();
+}
+
+// ---------- Экран 4: расшифровка ----------
+function renderReceipt(){
+  const r = findRow(currentId);
+  document.getElementById('r-title').textContent = 'Строка ' + r.id;
+  document.getElementById('r-sub').textContent = r.customer + ' · ' + r.clientId + ' · период ' + r.period;
+  document.getElementById('r-badges').innerHTML = r.badges.map(badge).join('');
+  document.getElementById('r-price').textContent = priceLabel(r) + (r.price != null ? '  ·  сумма ' + sumLabel(r) : '');
+
+  const active = r.candidates.find(c => c.selected) || r.candidates[0];
+  document.getElementById('r-active-formula').innerHTML = `
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:2px">
+      <div><code>${active.id}</code> <span class="muted" style="font-size:.78rem">создана ${active.created}</span></div>
+      <span class="badge ok" style="margin:0">используется</span>
+    </div>
+    <div class="muted" style="font-size:.78rem">${active.scope}</div>
+    <div class="formula-box">${active.formulaText}</div>`;
+
+  const noteEl = document.getElementById('r-note');
+  noteEl.innerHTML = r.note ? `<div class="note ${r.note.type === 'info' ? 'info' : ''}">${r.note.text}</div>` : '';
+
+  const others = r.candidates.filter(c => c !== active);
+  const otherBlock = document.getElementById('r-other-block');
+  if(others.length){
+    otherBlock.style.display = 'block';
+    document.getElementById('r-other-label').textContent = `Показать другие формулы для этой строки (${others.length})`;
+    document.getElementById('r-other-panel').innerHTML = others.map(c => `
+      <div class="cand" onclick="selectCandidate(${r.id}, '${c.id}')">
+        <div class="cand-top"><div><code>${c.id}</code> <span class="muted" style="font-size:.78rem">создана ${c.created}</span></div></div>
+        <div class="muted" style="font-size:.78rem">${c.scope}</div>
+        <div class="formula-box cand-formula">${c.formulaText}</div>
+      </div>`).join('');
+    document.getElementById('r-other-panel').classList.remove('open');
+    document.getElementById('r-other-caret').textContent = '▸';
+  } else {
+    otherBlock.style.display = 'none';
+  }
+
+  document.getElementById('r-components').innerHTML = r.components.map(c => `
+    <tr>
+      <td><code>${c.name}</code></td>
+      <td>${c.type}</td>
+      <td>${c.value}</td>
+      <td class="muted">${c.source}</td>
+      <td>${c.editable ? `<div style="display:flex;gap:6px"><input class="comp-input" type="number" id="edit-${c.name}" placeholder="ввести значение"><button class="ghost small" onclick="recalcComponent('${c.name}')">Пересчитать</button></div>` : ''}</td>
+    </tr>`).join('');
+
+  document.getElementById('r-log').innerHTML = r.log.length
+    ? r.log.map(l => `<tr><td>${l.when}</td><td>${l.who}</td><td>${l.what}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="muted">Правок пока не было</td></tr>';
+
+  document.getElementById('override-panel').style.display = 'none';
+}
+
+function toggleOtherFormulas(){
+  const p = document.getElementById('r-other-panel');
+  const caret = document.getElementById('r-other-caret');
+  const open = p.classList.toggle('open');
+  caret.textContent = open ? '▾' : '▸';
+}
+
+function recalcComponent(varName){
+  const r = findRow(currentId);
+  const input = document.getElementById('edit-' + varName);
+  const val = input.value;
+  if(!val){ return; }
+  const comp = r.components.find(c => c.name === varName);
+  comp.value = val + ' (введено вручную)';
+  comp.editable = false;
+  comp.source = 'введено пользователем';
+
+  r.price = parseFloat(val) * 37.4 + 1200;
+  r.badges = r.badges.filter(b => b !== 'error');
+  if(!r.badges.includes('manual')) r.badges.push('manual');
+
+  r.log.push({when:'21.07.2026 14:20', who:'А. Юрина', what:`Введено значение ${varName} = ${val} вручную (котировка отсутствовала в справочнике). Цена пересчитана.`});
+
+  renderReceipt();
+  renderTable();
+}
+
+function selectCandidate(rowId, formulaId){
+  const r = findRow(rowId);
+  r.candidates.forEach(c => c.selected = (c.id === formulaId));
+  r.log.push({when:'21.07.2026 14:25', who:'А. Юрина', what:`Выбрана формула ${formulaId} вместо предложенной по умолчанию.`});
+  renderReceipt();
+}
+
+function toggleOverride(){
+  const p = document.getElementById('override-panel');
+  p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+}
+
+function applyOverride(){
+  const r = findRow(currentId);
+  const price = document.getElementById('override-price').value;
+  const reason = document.getElementById('override-reason').value;
+  if(!price || !reason){ alert('Укажите и цену, и причину правки'); return; }
+  const old = priceLabel(r);
+  r.price = parseFloat(price);
+  if(!r.badges.includes('manual')) r.badges.push('manual');
+  r.badges = r.badges.filter(b => b !== 'error');
+  r.log.push({when:'21.07.2026 14:31', who:'А. Юрина', what:`Цена изменена вручную: ${old} → ${priceLabel(r)}. Причина: ${reason}`});
+  renderReceipt();
+  renderTable();
+}
+
+// ---------- Экран 5: экспорт ----------
+function renderExportPreview(){
+  const cols = ['row_id','client_id','клиент','период','объём, т','цена','сумма','статус'];
+  const head = '<thead><tr>' + cols.map(c=>`<th>${c}</th>`).join('') + '</tr></thead>';
+  const body = rows.map(r => `<tr>
+    <td>${r.id}</td><td>${r.clientId}</td><td>${r.customer}</td><td>${r.period}</td>
+    <td>${r.forecast.toLocaleString('ru-RU')}</td><td>${priceLabel(r)}</td><td>${sumLabel(r)}</td>
+    <td>${r.badges.map(badge).join('')}</td>
+  </tr>`).join('');
+  document.getElementById('export-preview-table').innerHTML = head + '<tbody>' + body + '</tbody>';
+}
+
+function pluralError(n){
+  const m10 = n % 10, m100 = n % 100;
+  if(m10 === 1 && m100 !== 11) return 'ошибка';
+  if([2,3,4].includes(m10) && ![12,13,14].includes(m100)) return 'ошибки';
+  return 'ошибок';
+}
+function attemptExport(){
+  const errCount = rows.filter(r => r.badges.includes('error')).length;
+  if(errCount > 0){
+    document.getElementById('confirm-text').textContent = `В расчёте есть ещё ${errCount} ${pluralError(errCount)}. Вы точно хотите сохранить файл?`;
+    document.getElementById('confirm-modal').style.display = 'flex';
+  } else {
+    doExport();
+  }
+}
+function closeConfirmModal(){ document.getElementById('confirm-modal').style.display = 'none'; }
+function confirmExport(){ closeConfirmModal(); doExport(); }
+function doExport(){ alert('Файл сформирован (в макете это заглушка, реальной выгрузки нет).'); }
+
+// ---------- Навигация ----------
+function switchTab(name){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const idx = {upload:0, calc:1, results:2, receipt:3, export:4}[name];
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  if(name === 'upload') renderFiles();
+  if(name === 'calc' && !calcRunning) renderCalcStatic();
+  if(name === 'results'){ renderFilterPills(); renderTable(); }
+  if(name === 'receipt') renderReceipt();
+  if(name === 'export') renderExportPreview();
+}
+
+setUploadState('empty');
+renderPeriodMenu();
+renderCalcStatic();
+renderFilterPills();
+renderTable();
+renderReceipt();
+renderExportPreview();
+</script>
+</body>
+</html>
